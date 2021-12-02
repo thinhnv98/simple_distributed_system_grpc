@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "/message";
+
+package message;
+
+message ARequest {
+  string name = 1;
+}
+
+message AResponse {
+  string result = 1;
+}
+
+service GetMessage {
+  rpc Get (ARequest) returns (AResponse) {}
+}
