@@ -1,16 +1,16 @@
 # Simple first method GRPC on GO
 
-##Run server A
+## Run server A
 ```
 make run-server
 ```
 
-##Test client B
+## Test client B
 ```
 make run-client
 ```
 
-##Result
+## Result
 - You will see this:
 ```
 Succeed for input: ThinhNguyenV
