@@ -21,5 +21,6 @@ func main() {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	message.RegisterGetMessageServer(grpcServer, controller.MessageController{})
+	log.Println("Server ready on :8080")
 	grpcServer.Serve(lis)
 }

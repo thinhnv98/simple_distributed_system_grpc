@@ -8,10 +8,15 @@ message ARequest {
   string name = 1;
 }
 
+message ARequests {
+  repeated string names = 1;
+}
+
 message AResponse {
   string result = 1;
 }
 
 service GetMessage {
   rpc Get (ARequest) returns (AResponse) {}
+  rpc GetStreaming(ARequests) returns (stream AResponse) {}
 }

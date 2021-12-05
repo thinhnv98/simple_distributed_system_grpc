@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GetMessageClient interface {
 	Get(ctx context.Context, in *ARequest, opts ...grpc.CallOption) (*AResponse, error)
+	GetStreaming(ctx context.Context, in *ARequests, opts ...grpc.CallOption) (GetMessage_GetStreamingClient, error)
 }
 
 type getMessageClient struct {
@@ -38,11 +39,44 @@ func (c *getMessageClient) Get(ctx context.Context, in *ARequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *getMessageClient) GetStreaming(ctx context.Context, in *ARequests, opts ...grpc.CallOption) (GetMessage_GetStreamingClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GetMessage_ServiceDesc.Streams[0], "/message.GetMessage/GetStreaming", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &getMessageGetStreamingClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GetMessage_GetStreamingClient interface {
+	Recv() (*AResponse, error)
+	grpc.ClientStream
+}
+
+type getMessageGetStreamingClient struct {
+	grpc.ClientStream
+}
+
+func (x *getMessageGetStreamingClient) Recv() (*AResponse, error) {
+	m := new(AResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GetMessageServer is the server API for GetMessage service.
 // All implementations must embed UnimplementedGetMessageServer
 // for forward compatibility
 type GetMessageServer interface {
 	Get(context.Context, *ARequest) (*AResponse, error)
+	GetStreaming(*ARequests, GetMessage_GetStreamingServer) error
 	mustEmbedUnimplementedGetMessageServer()
 }
 
@@ -52,6 +86,9 @@ type UnimplementedGetMessageServer struct {
 
 func (UnimplementedGetMessageServer) Get(context.Context, *ARequest) (*AResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedGetMessageServer) GetStreaming(*ARequests, GetMessage_GetStreamingServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetStreaming not implemented")
 }
 func (UnimplementedGetMessageServer) mustEmbedUnimplementedGetMessageServer() {}
 
@@ -84,6 +121,27 @@ func _GetMessage_Get_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GetMessage_GetStreaming_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ARequests)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GetMessageServer).GetStreaming(m, &getMessageGetStreamingServer{stream})
+}
+
+type GetMessage_GetStreamingServer interface {
+	Send(*AResponse) error
+	grpc.ServerStream
+}
+
+type getMessageGetStreamingServer struct {
+	grpc.ServerStream
+}
+
+func (x *getMessageGetStreamingServer) Send(m *AResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GetMessage_ServiceDesc is the grpc.ServiceDesc for GetMessage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -96,6 +154,12 @@ var GetMessage_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GetMessage_Get_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetStreaming",
+			Handler:       _GetMessage_GetStreaming_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "proto/message.proto",
 }
